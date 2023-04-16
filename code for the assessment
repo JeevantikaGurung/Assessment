@@ -1,0 +1,156 @@
+import zipfile
+zip_ref = zipfile.ZipFile('/content/Student Projects.zip', 'r')
+zip_ref.extractall('/content')
+zip_ref.close()
+
+import tensorflow as tf
+from tensorflow import keras
+from keras import Sequential
+from keras.layers import Dense,Conv2D,MaxPooling2D,Flatten,BatchNormalization,Dropout
+
+import cv2
+
+!mkdir train_ds
+
+train_ds = keras.utils.image_dataset_from_directory(
+    directory = '/content/train_ds',
+    labels='inferred',
+    label_mode = 'int',
+    batch_size=32,
+    image_size=(256,256),
+    shuffle=True,
+    color_mode='grayscale'
+)
+
+Found 193 files belonging to 3 classes.
+
+## Here there are very less no. of images so in order to increase the images we need to perform In=mage Augamantation
+
+from keras.preprocessing.image import ImageDataGenerator
+from skimage import io
+
+datagen = ImageDataGenerator(rotation_range =15, 
+                         width_shift_range = 0.2, 
+                         height_shift_range = 0.2,  
+                         rescale=1./255, 
+                         shear_range=0.2, 
+                         zoom_range=0.2, 
+                         horizontal_flip = True, 
+                         fill_mode = 'nearest', 
+                         data_format='channels_last', 
+                         brightness_range=[0.5, 1.5]) 
+                         
+                         import numpy as np
+import os
+import glob
+from PIL import Image
+from keras.preprocessing import image
+from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.utils import img_to_array,array_to_img, load_img
+
+batch_size = 16
+train_datagen = ImageDataGenerator(
+    rescale = 1./255,
+    shear_range=0.2,
+    zoom_range=0.2,
+    horizontal_flip=True
+)
+
+train_generator = train_datagen.flow_from_directory(
+    '/content/train_ds',
+    target_size=(256,256),
+    batch_size=batch_size,
+    class_mode='categorical'  
+)
+
+Found 193 images belonging to 3 classes.
+
+from keras.layers.core.activation import Activation
+model  = Sequential()
+model.add(Conv2D(32,(3,3),input_shape = (256,256,1)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+model.add(Conv2D(32,(3,3)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+model.add(Conv2D(64,(3,3)))
+model.add(Activation('relu'))
+model.add(MaxPooling2D(pool_size=(2,2)))
+
+model.add(Flatten())
+model.add(Dense(64))
+model.add(Activation('relu'))
+model.add(Dense(1))
+model.add(Activation('sigmoid'))
+
+model.compile(loss = 'sparse_categorical_crossentropy',optimizer = 'rmsprop')
+
+history = model.fit(train_ds,epochs=10,validation_data=train_ds)
+
+Epoch 1/10
+7/7 [==============================] - 6s 261ms/step - loss: nan - val_loss: nan
+Epoch 2/10
+7/7 [==============================] - 2s 149ms/step - loss: nan - val_loss: nan
+Epoch 3/10
+7/7 [==============================] - 1s 123ms/step - loss: nan - val_loss: nan
+Epoch 4/10
+7/7 [==============================] - 1s 93ms/step - loss: nan - val_loss: nan
+Epoch 5/10
+7/7 [==============================] - 1s 93ms/step - loss: nan - val_loss: nan
+Epoch 6/10
+7/7 [==============================] - 1s 93ms/step - loss: nan - val_loss: nan
+Epoch 7/10
+7/7 [==============================] - 1s 91ms/step - loss: nan - val_loss: nan
+Epoch 8/10
+7/7 [==============================] - 1s 93ms/step - loss: nan - val_loss: nan
+Epoch 9/10
+7/7 [==============================] - 1s 93ms/step - loss: nan - val_loss: nan
+Epoch 10/10
+7/7 [==============================] - 1s 93ms/step - loss: nan - val_loss: nan
+
+test_img = cv2.imread('/content/train_ds/CELOSIA ARGENTEA L/00ab26d4-71a6-4185-970f-e03166ad10ae.jpeg')
+
+import matplotlib.pyplot as plt
+
+plt.imshow(test_img)
+
+
+zoom_range=0.2, test_img.shape
+(330, 220, 3)
+
+test_img = cv2.resize(test_img,(256,256))
+test_input = test_img.reshape((-1,256,256,1))
+
+model.predict(test_input)
+
+1/1 [==============================] - 0s 258ms/step
+array([[nan],
+       [nan],
+       [nan]], dtype=float32)
+       
+       from tensorflow.keras.applications.resnet50 import ResNet50
+from tensorflow.keras.applications.resnet50 import preprocess_input,decode_predictions
+
+model = ResNet50(weights='imagenet')
+
+Downloading data from https://storage.googleapis.com/tensorflow/keras-applications/resnet/resnet50_weights_tf_dim_ordering_tf_kernels.h5
+102967424/102967424 [==============================] - 5s 0us/step
+[ ]
+
+
+img_path = '/content/train_ds/CELOSIA ARGENTEA L/00ab26d4-71a6-4185-970f-e03166ad10ae.jpeg'
+
+img = load_img(img_path,target_size=(224,224))
+x = img_to_array(img)
+x = np.expand_dims(x,axis = 0)
+x = preprocess_input(x)
+preds = model.predict(x)
+print('predicted:',decode_predictions(preds,top = 3)[0])
+
+
+1/1 [==============================] - 2s 2s/step
+Downloading data from https://storage.googleapis.com/download.tensorflow.org/data/imagenet_class_index.json
+35363/35363 [==============================] - 0s 0us/step
+predicted: [('n07730033', 'cardoon', 0.74342865), ('n02280649', 'cabbage_butterfly', 0.09769459), ('n07718747', 'artichoke', 0.02978991)]
